@@ -3,6 +3,7 @@ from .models import MenuItem, Order
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
     
     class Meta:

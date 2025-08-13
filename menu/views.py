@@ -1,42 +1,57 @@
-from rest_framework import generics, permissions, status
-from django.contrib.auth.models import User
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
+from pyexpat.errors import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import RegisterForm
 from .models import MenuItem, Order
-from .serializers import UserSerializer, MenuItemSerializer, OrderSerializer
 
-# İstifadəçi qeydiyyatı
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
-# İstifadəçi login (token-based)
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        user = authenticate(username=username, password=password)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key})
-        return Response({"error": "İstifadəçi adı və ya parol səhvdir."},
-                        status=status.HTTP_401_UNAUTHORIZED)
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('menu')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
 
-# Menyu siyahısı
-class MenuListView(generics.ListAPIView):
-    queryset = MenuItem.objects.all()
-    serializer_class = MenuItemSerializer
-    permission_classes = [permissions.AllowAny]
+@login_required
+def menu_view(request):
+    items = MenuItem.objects.all()
+    
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        if item_id:
+            item = MenuItem.objects.get(id=item_id)
+            Order.objects.create(user=request.user, item=item)
 
-# Sifarişlər (yalnız login olmuş istifadəçi üçün)
-class OrderListCreateView(generics.ListCreateAPIView):
-    serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    user_orders = Order.objects.filter(user=request.user)
+    return render(request, 'menu/menu.html', {'menu_items': items, 'user_orders': user_orders})
 
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+def logout_view(request):
+    logout(request)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    return redirect("login")
+
+def register_view(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'İstifadəçi {username} uğurla qeydiyyatdan keçdi!')
+            return redirect('login')  
+    else:
+        form = RegisterForm()
+    return render(request, 'register.html', {'form': form})
+
+
+def menu_view(request):
+   items = MenuItem.objects.all()
+   return render(request, 'menu.html', {'menu_items': items})

@@ -1,0 +1,49 @@
+{% extends "product/layouts/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+  }
+  .card {
+    border-radius: 15px;
+    padding: 30px;
+    background-color: rgba(255,255,255,0.95);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+  }
+  .btn-primary {
+    background: linear-gradient(90deg, #f6d365, #fda085);
+    border: none;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(90deg, #fda085, #f6d365);
+  }
+</style>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="card" style="width: 400px;">
+    <h2 class="card-title text-center mb-4">Daxil ol</h2>
+    <form method="POST">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary w-100">Daxil ol</button>
+    </form>
+
+    <p class="text-center mt-3">Hesabınız yoxdur? <a href="{% url 'register' %}">Qeydiyyatdan keç</a></p>
+  </div>
+</div>
+{% endblock %}
