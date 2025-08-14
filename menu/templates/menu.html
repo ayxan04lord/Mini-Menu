@@ -4,35 +4,126 @@
 
 {% block content %}
 <style>
-  body {
+body {
     background: #f8f9fa;
-  }
-  .card {
-    border-radius: 15px;
-    transition: transform 0.3s, box-shadow 0.3s;
-  }
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
-  }
-  .btn-primary {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s, border 0.3s;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2, #ff7eb9, #ff9a7b);
+    z-index: -2;
+    filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+
+.card::after {
+    content: '';
+    position: absolute;
+    top:0; left:0; right:0; bottom:0;
+    border-radius: 18px;
+    box-shadow: inset 0 0 0 rgba(255,255,255,0);
+    transition: box-shadow 0.3s;
+    z-index: -1;
+}
+
+.card:hover::before {
+    opacity: 1;
+}
+
+.card:hover::after {
+    box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.15);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 35px rgba(102,126,234,0.3), 0 10px 25px rgba(118,75,162,0.25);
+}
+
+.card-body {
+    position: relative;
+    z-index: 1;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.card-text {
+    color: #555;
+}
+
+
+.btn-primary {
+    display: block;
+    margin: 1.5rem auto 0;
+    width: 220px;
     background: linear-gradient(90deg, #667eea, #764ba2);
     border: none;
-    transition: background 0.3s;
-  }
-  .btn-primary:hover {
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-weight: 500;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+.btn-primary:hover {
     background: linear-gradient(90deg, #764ba2, #667eea);
-  }
-  .order-list {
-    margin-top: 50px;
-    background: #fff;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-  }
-  .top-btns {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102,126,234,0.3), 0 6px 12px rgba(118,75,162,0.25);
+}
+
+.btn-info {
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.btn-info:hover {
+    transform: translateY(-1px);
+}
+
+.form-check-input {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.form-check-input:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(102,126,234,0.3);
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+.update-inputs {
+    display: none;
+    margin-top: 10px;
+}
+
+.top-btns {
     margin-bottom: 20px;
-  }
+}
+
+.btn-update {
+    margin-top: 5px;
+}
 </style>
 
 <div class="container mt-5">
@@ -44,25 +135,96 @@
 
     <form method="POST">
         {% csrf_token %}
-        <div class="row">
+        <div class="row g-4">
             {% for item in menu_items %}
             <div class="col-md-4 mb-3">
                 <div class="card h-100">
                     <div class="card-body">
-                        <h5 class="card-title">{{ item.name }}</h5>
-                        <p class="card-text">Qiymət: {{ item.price }} AZN</p>
-                        <div class="form-check">
+                        <h5 class="card-title">{{ item.name }} - {{ item.price }} AZN</h5>
+
+                        <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="items" value="{{ item.id }}" id="item{{ item.id }}">
                             <label class="form-check-label" for="item{{ item.id }}">
                                 Sifariş et
                             </label>
                         </div>
+
+                        <button type="button" class="btn btn-warning btn-sm btn-update" data-id="{{ item.id }}">
+                            Update
+                        </button>
+
+                        <div class="update-inputs" id="update-{{ item.id }}">
+                            <input type="text" class="form-control mb-2" id="name-{{ item.id }}" value="{{ item.name }}">
+                            <input type="number" class="form-control mb-2" id="price-{{ item.id }}" value="{{ item.price }}">
+                            <button type="button" class="btn btn-success btn-sm update-menu-btn" data-id="{{ item.id }}">OK</button>
+                        </div>
+
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Sifarişi Yarat</button>
+        <button type="submit" class="btn btn-primary mt-4">Sifarişi Yarat</button>
     </form>
 </div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.querySelectorAll('.btn-update').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const inputs = document.getElementById(`update-${id}`);
+        inputs.style.display = inputs.style.display === 'block' ? 'none' : 'block';
+    });
+});
+
+document.querySelectorAll('.update-menu-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const itemId = btn.dataset.id;
+        const name = document.getElementById(`name-${itemId}`).value;
+        const price = parseFloat(document.getElementById(`price-${itemId}`).value);
+
+        if (!name || isNaN(price)) {
+            alert('Ad və düzgün qiymət daxil edin.');
+            return;
+        }
+
+        fetch(`/menu/update/${itemId}/api/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({name: name, price: price})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+
+                const cardTitle = btn.closest('.card-body').querySelector('.card-title');
+                cardTitle.textContent = `${name} - ${price} AZN`;
+                document.getElementById(`update-${itemId}`).style.display = 'none';
+            } else if (data.error) {
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
+    });
+});
+</script>
 {% endblock %}
