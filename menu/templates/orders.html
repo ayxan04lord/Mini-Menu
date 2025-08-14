@@ -1,0 +1,92 @@
+{% extends "product/layouts/base.html" %}
+
+{% block title %}Sifarişlər{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: #f8f9fa;
+  }
+  .order-card {
+    border-radius: 15px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .order-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+  }
+  .back-btn {
+    margin-bottom: 20px;
+  }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'menu' %}" class="btn btn-secondary me-2">Menyu</a>
+    </div>
+
+    <h2>Sizin Sifarişləriniz</h2>
+    {% for order in orders %}
+    <div class="card order-card" id="order-{{ order.id }}">
+        <div class="card-body">
+            <h5 class="card-title order-header">Sifariş tarixi: {{ order.created_at|date:"Y-m-d H:i" }}</h5>
+            <ul>
+                {% for item in order.items.all %}
+                <li>{{ item.name }} - {{ item.price }} AZN</li>
+                {% endfor %}
+            </ul>
+            <button class="btn btn-danger btn-sm delete-order-btn" data-id="{{ order.id }}">Sifarişi Sil</button>
+        </div>
+    </div>
+    {% empty %}
+    <p>Hələ heç bir sifarişiniz yoxdur.</p>
+    {% endfor %}
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+document.querySelectorAll('.delete-order-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const orderId = btn.getAttribute('data-id');
+        if(!confirm("Bu sifarişi silmək istədiyinizə əminsiniz?")) return;
+
+        fetch(`/orders/delete/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.message){
+                const orderDiv = document.getElementById(`order-${orderId}`);
+                orderDiv.remove(); 
+                alert(data.message);
+            } else if(data.error){
+                alert(data.error);
+            }
+        })
+        .catch(err => console.error(err));
+    });
+});
+</script>
+{% endblock %}

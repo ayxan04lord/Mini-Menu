@@ -29,7 +29,7 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'items', 'items_ids', 'created_at']
+        fields = ['__all__']
         
     def validate_items(self, value):
         if not value:
